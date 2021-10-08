@@ -4,18 +4,13 @@ from numpy.core.shape_base import block
 #PyQt5中使用的基本控件都在PyQt5.QtWidgets模块中
 from Ui_frame import Ui_MainWindow
 #from settings import setting
-from matplotlib.widgets import Cursor
 import sys
-import os
-import matplotlib
 from PyQt5 import QtGui
 from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSizePolicy, QFileDialog
 import pyqtgraph as pg
-import random
 import numpy as np
-import pandas as pd
 from skimage.measure import block_reduce
 
 
