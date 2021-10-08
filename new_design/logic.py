@@ -1,4 +1,6 @@
 import sys
+
+from numpy.core.shape_base import block
 #PyQt5中使用的基本控件都在PyQt5.QtWidgets模块中
 from Ui_frame import Ui_MainWindow
 #from settings import setting
@@ -14,6 +16,8 @@ import pyqtgraph as pg
 import random
 import numpy as np
 import pandas as pd
+from skimage.measure import block_reduce
+
 
 class MainWindow(QMainWindow,Ui_MainWindow):
     def __init__(self):
@@ -24,7 +28,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.gridLayout.addWidget(self.graph)
         self.rawdata = []
         #self.binned = np.zeros(1024)
-        self.binned = np.histogram(np.random.normal(size=10240),bins=1024)[0]
+        self.original = np.histogram(np.random.normal(size=40960),bins=4096)[0]
+        self.binned = self.original.copy()
         
         self.start_button.clicked.connect(self.start_collection)
         self.pause_button.clicked.connect(self.pause_collection)
@@ -44,10 +49,12 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.timer.start(1000)
 
         self.plot_option = self.plot_method.currentText()
+        self.expand_option = "Original"
         self.display_setting_save.clicked.connect(self.display_setting_func)
 
     def display_setting_func(self):
         self.plot_option = self.plot_method.currentText()
+        self.expand_option = self.curve_expansion.currentText()
 
 
     def collections_setting_func(self):
@@ -57,20 +64,19 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         
         
         #调用QtGui.QPixmap方法，打开一个图片，存放在变量中
-        Icon = QtGui.QPixmap('C:/Users/ZDD/Desktop/核数据处理/pha/new_design/templates/'+self.source+".jpeg")
+        Icon = QtGui.QPixmap(sys.path[0]+'/templates/'+self.source+".jpeg")
         # 在disp里面，调用setPixmap命令，建立一个图像存放框，并将之前的图像png存放在这个框框里。
         self.disp.setPixmap(Icon)
         self.disp.setScaledContents(True)
         pass
     
     def link(self):
-        print(os.getcwd())
-        Icon = QtGui.QPixmap("C:/Users/ZDD/Desktop/核数据处理/pha/new_design/templates/connected.jpeg")
+        Icon = QtGui.QPixmap(sys.path[0]+"/templates/connected.jpeg")
         self.connection_disp.setPixmap(Icon)
         self.connection_disp.setScaledContents(True)
 
     def cut(self):
-        Icon = QtGui.QPixmap("C:/Users/ZDD/Desktop/核数据处理/pha/new_design/templates/disconnected.jpeg")
+        Icon = QtGui.QPixmap(sys.path[0]+"/templates/disconnected.jpeg")
         self.connection_disp.setPixmap(Icon)
         self.connection_disp.setScaledContents(True)
 
@@ -82,17 +88,30 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.rawdata.append(new_income)
         self.binned = np.histogram(np.array(self.rawdata),bins=1024)[0]
         """
-        self.binned = self.binned*1.005
+        self.original = self.original*1.005
 
     def update_plot(self):
         if self.on_collection == False:
             return
+        if self.expand_option == "Original":
+            self.binned = self.original
+            pass
+        if self.expand_option == "Interval":
+            length = len(self.original)
+            self.binned = self.original[0:length:4]
+        elif self.expand_option == "Max":
+            self.binned = block_reduce(self.original,(4,),np.max)
+            pass
+        elif self.expand_option == "Mean":
+            self.binned = block_reduce(self.original,(4,),np.mean)
+        
         if self.plot_option == "Line":
             self.graph.clear()
             self.curve1 = self.graph.plot(self.binned)
+        
         elif self.plot_option == "Scatter":
             x = self.binned
-            y = np.array(range(0,1024))
+            y = np.array(range(0,len(self.binned)))
 
             self.graph.clear()
             self.curve2 = self.graph.plot(y,x,pen=None,symbol="o")
@@ -113,7 +132,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         print("Ended")
         self.on_collection = False
         self.rawdata = []
-        self.binned = np.zeros(1024)
+        self.original = None
         self.timer.stop()
 
 
