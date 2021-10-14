@@ -12,6 +12,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QSizePolicy, QFileDialog
 import pyqtgraph as pg
 import numpy as np
 from skimage.measure import block_reduce
+from client import receiver
+from threading import Thread
 
 
 class MainWindow(QMainWindow,Ui_MainWindow):
@@ -23,6 +25,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.gridLayout.addWidget(self.graph)
         self.rawdata = []
         #self.binned = np.zeros(1024)
+        self.buffer = []
         self.original = np.histogram(np.random.normal(size=40960),bins=4096)[0]
         self.binned = self.original.copy()
         
@@ -47,6 +50,9 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.expand_option = "Original"
         self.display_setting_save.clicked.connect(self.display_setting_func)
 
+        self.receiver_agent = receiver("127.0.0.1",6688,1024)
+        
+
     def display_setting_func(self):
         self.plot_option = self.plot_method.currentText()
         self.expand_option = self.curve_expansion.currentText()
@@ -66,24 +72,53 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         pass
     
     def link(self):
-        Icon = QtGui.QPixmap(sys.path[0]+"/templates/connected.jpeg")
-        self.connection_disp.setPixmap(Icon)
-        self.connection_disp.setScaledContents(True)
+        self.receiver_agent.connect()
+        
+        if not self.receiver_agent.connected:
+            Icon = QtGui.QPixmap(sys.path[0]+"/templates/disconnected.jpeg")
+            self.connection_disp.setPixmap(Icon)
+            self.connection_disp.setScaledContents(True)
+            return
+        elif self.receiver_agent.connected:
+            Icon = QtGui.QPixmap(sys.path[0]+"/templates/connected.jpeg")
+            self.connection_disp.setPixmap(Icon)
+            self.connection_disp.setScaledContents(True)
+            
+            #连接成功之后，开启一个可以不断读取数据的子线程
+            print("Start receiver thread")
+            self.recv_thread = Thread(target=self.fetch_data,args=(self.receiver_agent,))
+            self.recv_thread.setDaemon(True)
+            self.recv_thread.start()
 
     def cut(self):
+        self.receiver_agent.disconnect()
         Icon = QtGui.QPixmap(sys.path[0]+"/templates/disconnected.jpeg")
         self.connection_disp.setPixmap(Icon)
         self.connection_disp.setScaledContents(True)
 
+    def fetch_data(self,agent):
+        #在子线程里面用死循环，一旦agent不再连接，子线程就会结束，等待下一次线程开启
+        while True:
+            if not agent.connected:
+                print("Collection Ended")
+                break
+            data = agent.regular_receive()
+            self.buffer.append(data)
+            #np.savetxt('log.txt',np.array(self.buffer),delimiter=',')
+            print("Got "+str(data))
+        pass
+
     def update_data(self):
         if self.on_collection == False:
             return 
+        print(self.buffer)
         """
         new_income = np.random.randn()
         self.rawdata.append(new_income)
         self.binned = np.histogram(np.array(self.rawdata),bins=1024)[0]
         """
-        self.original = self.original*1.005
+        self.original = np.histogram(np.array(self.buffer),bins=4096)[0]
+        #self.original = self.original*1.005
 
     def update_plot(self):
         if self.on_collection == False:
