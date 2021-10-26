@@ -14,6 +14,16 @@ import numpy as np
 from skimage.measure import block_reduce
 from client import receiver
 from threading import Thread
+import time
+
+
+class CommonHelper:
+    def __init__(self):
+        pass
+    @staticmethod
+    def readQss(style):
+        with open(style,"r") as f:
+            return f.read()
 
 
 class MainWindow(QMainWindow,Ui_MainWindow):
@@ -44,13 +54,16 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.update_data)
         self.timer.timeout.connect(self.update_plot)
-        self.timer.start(1000)
+        #self.timer.start(1000)
 
         self.plot_option = self.plot_method.currentText()
         self.expand_option = "Original"
         self.display_setting_save.clicked.connect(self.display_setting_func)
 
-        self.receiver_agent = receiver("127.0.0.1",6688,1024)
+        #self.receiver_agent = receiver("127.0.0.1",6688,1024)
+
+        qssStyle = CommonHelper.readQss("qss/MacOS.qss")
+        self.setStyleSheet(qssStyle)
         
 
     def display_setting_func(self):
@@ -72,6 +85,17 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         pass
     
     def link(self):
+        # Collection type: simulation
+        if self.source == "Simulation":
+            Icon = QtGui.QPixmap(sys.path[0]+"/templates/connected.jpeg")
+            self.connection_disp.setPixmap(Icon)
+            self.connection_disp.setScaledContents(True)
+            return
+        ip = self.ip_addr_input.text()
+        port = int(self.port_input.text())
+        print(ip)
+        print(port)
+        self.receiver_agent = receiver(ip,port,1024)
         self.receiver_agent.connect()
         
         if not self.receiver_agent.connected:
@@ -103,21 +127,25 @@ class MainWindow(QMainWindow,Ui_MainWindow):
                 print("Collection Ended")
                 break
             data = agent.regular_receive()
-            self.buffer.append(data)
+            self.buffer = data
+            #print("Fetched {}".format(str(max(data))))
+            time.sleep(1)
+            #print(self.buffer)
             #np.savetxt('log.txt',np.array(self.buffer),delimiter=',')
-            print("Got "+str(data))
-        pass
+            #print("Got "+str(data))
+        
 
     def update_data(self):
         if self.on_collection == False:
             return 
-        print(self.buffer)
+        print(max(self.buffer))
         """
         new_income = np.random.randn()
         self.rawdata.append(new_income)
         self.binned = np.histogram(np.array(self.rawdata),bins=1024)[0]
         """
-        self.original = np.histogram(np.array(self.buffer),bins=4096)[0]
+        #self.original = np.histogram(np.array(self.buffer),bins=4096)[0]
+        self.original = list(self.buffer)
         #self.original = self.original*1.005
 
     def update_plot(self):
@@ -151,7 +179,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         print("Started")
         self.on_collection = True
 
-        self.timer.start()
+        self.timer.start(1000)
     
     def pause_collection(self):
         print("Paused")

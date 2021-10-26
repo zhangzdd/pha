@@ -1,4 +1,5 @@
 import socket
+import struct
  
 """
 p = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -42,5 +43,20 @@ class receiver:
     def regular_receive(self):
         if not self.connected:
             return
-        msg = int(self.soc.recv(self.buffer_size).decode("utf-8"))
-        return msg
+        self.soc.send("fetch".encode())
+        command = "fetch"
+        self.soc.send(command.encode())
+        data = self.soc.recv(1024*4)
+        #print(data)
+        #print(struct.unpack("i"*4096,data))
+        tpl = struct.unpack("i"*1024,data)
+        #print(max(tpl))
+        return tpl
+        #plt.plot(tpl)
+        #plt.show()
+        #plt.savefig("tmp.png")
+    
+    def send_cmd(self,cmd):
+        if not self.connected:
+            return
+        self.soc.send(cmd.encode())

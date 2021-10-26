@@ -43,4 +43,4 @@ while True:
         data = random.randint(0,100)
         con.send(str(data).encode("utf-8"))
         print("Sent "+str(data))
-        time.sleep(3)
+        time.sleep(1)
