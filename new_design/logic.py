@@ -16,6 +16,7 @@ from client import receiver
 from threading import Thread
 import time
 
+from brush import AddRegionWidget
 
 class CommonHelper:
     def __init__(self):
@@ -31,12 +32,14 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
         self.collection_settings_save.clicked.connect(self.collections_setting_func)
-        self.graph = pg.PlotWidget(self)
-        self.gridLayout.addWidget(self.graph)
+        #self.graph = pg.PlotWidget(self)
+        self.divided_graph = AddRegionWidget(parent=None)
+        self.gridLayout.addWidget(self.divided_graph)
         self.rawdata = []
         #self.binned = np.zeros(1024)
         self.buffer = []
-        self.original = np.histogram(np.random.normal(size=40960),bins=4096)[0]
+        #self.original = np.histogram(np.random.normal(size=40960),bins=4096)[0]
+        self.original = []
         self.binned = self.original.copy()
         
         self.start_button.clicked.connect(self.start_collection)
@@ -60,6 +63,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.expand_option = "Original"
         self.display_setting_save.clicked.connect(self.display_setting_func)
 
+        self.source = "Simulation"
         #self.receiver_agent = receiver("127.0.0.1",6688,1024)
 
         qssStyle = CommonHelper.readQss("qss/MacOS.qss")
@@ -90,6 +94,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
             Icon = QtGui.QPixmap(sys.path[0]+"/templates/connected.jpeg")
             self.connection_disp.setPixmap(Icon)
             self.connection_disp.setScaledContents(True)
+            self.original = np.histogram(np.random.normal(size=40960),bins=4096)[0]
             return
         ip = self.ip_addr_input.text()
         port = int(self.port_input.text())
@@ -138,6 +143,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
     def update_data(self):
         if self.on_collection == False:
             return 
+        if self.source == "Simulation":
+            self.original = self.original*1.005
         print(max(self.buffer))
         """
         new_income = np.random.randn()
@@ -151,6 +158,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
     def update_plot(self):
         if self.on_collection == False:
             return
+        
         if self.expand_option == "Original":
             self.binned = self.original
             pass
@@ -164,15 +172,17 @@ class MainWindow(QMainWindow,Ui_MainWindow):
             self.binned = block_reduce(self.original,(4,),np.mean)
         
         if self.plot_option == "Line":
-            self.graph.clear()
-            self.curve1 = self.graph.plot(self.binned)
+            #self.graph.clear()
+            #self.curve1 = self.graph.plot(self.binned)
+            self.divided_graph.display_data_curve(self.binned)
         
         elif self.plot_option == "Scatter":
             x = self.binned
             y = np.array(range(0,len(self.binned)))
 
-            self.graph.clear()
-            self.curve2 = self.graph.plot(y,x,pen=None,symbol="o")
+            #self.graph.clear()
+            #self.curve2 = self.graph.plot(y,x,pen=None,symbol="o")
+            self.divided_graph.display_data_scatter(y,x)
 
 
     def start_collection(self):
