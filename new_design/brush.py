@@ -32,7 +32,7 @@ class CurveWidget(pg.GraphicsLayoutWidget):
     def __post_init__(self) -> None:
         """Superclass loading and plot,region added"""
         super(CurveWidget, self).__init__(parent=self.parent)
-        SAMPLE_DATA3 = 20 + np.random.rand(500) * 10
+        SAMPLE_DATA3 = 20 + np.random.rand(100) * 10
         self.add_plot()
         self.add_region()
         self.connect_slot()
@@ -64,6 +64,28 @@ class CurveWidget(pg.GraphicsLayoutWidget):
 
         self.ci.layout.setColumnStretchFactor(0, 8)
         self.ci.layout.setColumnStretchFactor(1, 5)
+        
+        self.vLine = pg.InfiniteLine(angle=90, movable=False,pen='#f00')
+        #self.hLine = pg.InfiniteLine(angle=0, movable=False)
+        self.main_plotter.addItem(self.vLine, ignoreBounds=True)
+        #self.main_plotter.addItem(self.hLine, ignoreBounds=True)
+        self.vb = self.main_plotter.vb
+        self.proxy = pg.SignalProxy(self.main_plotter.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
+        self.label = pg.LabelItem(justify='right', size='20pt',parent=self.main_plotter)
+    
+    def mouseMoved(self,evt):
+        pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+        if self.main_plotter.sceneBoundingRect().contains(pos):
+            mousePoint = self.vb.mapSceneToView(pos)
+            index = int(mousePoint.x())
+            y_data = self.main_curve3.getData()[1]
+            x_data = self.main_curve3.getData()[0]
+            index = min(len(x_data)-1,index)
+            index = max(0,index)
+            self.label.setText("<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>" % (index,y_data[index]))
+            
+            self.vLine.setPos(index)
+            #self.hLine.setPos(mousePoint.y())
 
         
 
@@ -111,7 +133,7 @@ class ScatterWidget(pg.GraphicsLayoutWidget):
     def __post_init__(self) -> None:
         """Superclass loading and plot,region added"""
         super(ScatterWidget, self).__init__(parent=self.parent)
-        SAMPLE_DATA3 = 20 + np.random.rand(500) * 10
+        SAMPLE_DATA3 = 20 + np.random.rand(100) * 10
         self.add_plot()
         self.add_region()
         self.connect_slot()
@@ -134,7 +156,29 @@ class ScatterWidget(pg.GraphicsLayoutWidget):
 
         self.ci.layout.setColumnStretchFactor(0, 8)
         self.ci.layout.setColumnStretchFactor(1, 5)
-
+        
+        self.vLine = pg.InfiniteLine(angle=90, movable=False,pen='#f00')
+        #self.hLine = pg.InfiniteLine(angle=0, movable=False)
+        self.main_plotter.addItem(self.vLine, ignoreBounds=True)
+        #self.main_plotter.addItem(self.hLine, ignoreBounds=True)
+        self.vb = self.main_plotter.vb
+        self.proxy = pg.SignalProxy(self.main_plotter.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
+        self.label = pg.LabelItem(justify='right', size='20pt',parent=self.main_plotter)
+    
+    def mouseMoved(self,evt):
+        pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+        if self.main_plotter.sceneBoundingRect().contains(pos):
+            mousePoint = self.vb.mapSceneToView(pos)
+            index = int(mousePoint.x())
+            y_data = self.main_curve3.getData()[1]
+            x_data = self.main_curve3.getData()[0]
+            index = min(len(x_data)-1,index)
+            index = max(0,index)
+            self.label.setText("<span style='font-size: 12pt'>x=%0.1f,   <span style='color: red'>y1=%0.1f</span>" % (index,y_data[index]))
+            
+            self.vLine.setPos(index)
+            #self.hLine.setPos(mousePoint.y())
+    
     def add_region(self) -> None:
         """Add region"""
         self.region = pg.LinearRegionItem()
