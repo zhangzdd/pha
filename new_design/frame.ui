@@ -33,9 +33,9 @@
      <widget class="QComboBox" name="collection_source">
       <property name="geometry">
        <rect>
-        <x>150</x>
+        <x>130</x>
         <y>20</y>
-        <width>71</width>
+        <width>91</width>
         <height>21</height>
        </rect>
       </property>
@@ -278,6 +278,9 @@
         <height>31</height>
        </rect>
       </property>
+      <property name="text">
+       <string>1000000</string>
+      </property>
      </widget>
      <widget class="QLineEdit" name="lower_bound">
       <property name="geometry">
@@ -288,6 +291,9 @@
         <height>31</height>
        </rect>
       </property>
+      <property name="text">
+       <string>0</string>
+      </property>
      </widget>
      <widget class="QLineEdit" name="upper_bound">
       <property name="geometry">
@@ -297,6 +303,9 @@
         <width>81</width>
         <height>31</height>
        </rect>
+      </property>
+      <property name="text">
+       <string>1024</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_5">

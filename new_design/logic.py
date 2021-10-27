@@ -88,21 +88,38 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 
         qssStyle = CommonHelper.readQss("qss/MacOS.qss")
         self.setStyleSheet(qssStyle)
+
+        self.log_option = "No"
         
 
     def display_setting_func(self):
         self.plot_option = self.plot_method.currentText()
         self.expand_option = self.curve_expansion.currentText()
+        lw = int(self.lower_bound.text())
+        hi = int(self.upper_bound.text())
+        y_range = int(self.count_range.text())
+        self.log_option = self.log_count.currentText()
+
         if self.plot_option == "Line":
             clearLayout(self.gridLayout)
             self.divided_graph_curve = CurveWidget(parent=None)
             self.gridLayout.addWidget(self.divided_graph_curve)
+            self.divided_graph_curve.main_plotter.setXRange(lw,hi)
+            self.divided_graph_curve.main_plotter.setYRange(0,y_range)
+            self.on_collection = True
+            self.update_plot()
+            self.on_collection = False
             print("Line show")
         
         elif self.plot_option == "Scatter":
             clearLayout(self.gridLayout)
             self.divided_graph_scatter = ScatterWidget(parent=None)
             self.gridLayout.addWidget(self.divided_graph_scatter)
+            self.divided_graph_scatter.main_plotter.setXRange(lw,hi)
+            self.divided_graph_scatter.main_plotter.setYRange(0,y_range)
+            self.on_collection = True
+            self.update_plot()
+            self.on_collection = False
             print("Scatter show")
 
 
@@ -225,6 +242,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         if self.on_collection == False:
             return
         
+        
+
         rate = int(len(self.original)/1024)
         if self.expand_option == "Original":
             self.binned = self.original
@@ -238,6 +257,9 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         elif self.expand_option == "Mean":
             self.binned = block_reduce(self.original,(rate,),np.mean)
         
+        if self.log_option == "Yes":
+            self.binned[self.binned == 0] = 1
+            self.binned = np.log(self.binned)
 
         if self.plot_option == "Line":
             #self.graph.clear()
